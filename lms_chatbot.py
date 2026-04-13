@@ -1,18 +1,64 @@
-"""
-=============================================================
-Veeva Vault Training FAQ 챗봇 — CHAT A.I+ 스타일 UI
-=============================================================
-디자인: CHAT A.I+ UI 스타일 (좌측 사이드바 + 우측 채팅 영역)
-실행:   streamlit run lms_chatbot.py
-=============================================================
-"""
-
 import streamlit as st
 import re
 from datetime import datetime
 
 # ─────────────────────────────────────────────────────────────
-# 1. FAQ 데이터 정의
+# 1. 페이지 설정 및 디자인 커스텀
+# ─────────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title="Veeva Vault Training Help Center",
+    page_icon="🎓",
+    layout="wide"
+)
+
+# 커스텀 CSS 주입 (고급스러운 디자인 적용)
+st.markdown("""
+    <style>
+    /* 전체 배경색 및 폰트 설정 */
+    .stApp {
+        background-color: #f8f9fa;
+    }
+    
+    /* 사이드바 스타일링 */
+    [data-testid="stSidebar"] {
+        background-color: #ffffff;
+        border-right: 1px solid #e9ecef;
+    }
+    
+    /* 챗봇 메시지 스타일 개선 */
+    .stChatMessage {
+        border-radius: 15px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    
+    /* 헤더 스타일링 */
+    .main-header {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+    
+    .sub-header {
+        color: #64748b;
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+    }
+    
+    /* 카드형 UI (사이드바 메뉴용) */
+    .info-card {
+        background-color: #f1f5f9;
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 5px solid #007bff;
+        margin-bottom: 15px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────────────────────
+# 2. FAQ 데이터 정의
 # ─────────────────────────────────────────────────────────────
 FAQ_DATA = [
     # ── 교육 이수 ───────────────────────────────────────────
@@ -82,7 +128,7 @@ FAQ_DATA = [
         ),
         "category": "교육 이수"
     },
-
+ 
     # ── 퀴즈 ─────────────────────────────────────────────────
     {
         "question": "퀴즈에서 떨어졌어요. 다시 볼 수 있나요?",
@@ -117,7 +163,7 @@ FAQ_DATA = [
         ),
         "category": "퀴즈"
     },
-
+ 
     # ── 커리큘럼 ──────────────────────────────────────────────
     {
         "question": "커리큘럼이란 무엇인가요?",
@@ -152,7 +198,7 @@ FAQ_DATA = [
         ),
         "category": "커리큘럼"
     },
-
+ 
     # ── 사전 이수 ─────────────────────────────────────────────
     {
         "question": "사전 이수 조건이 있는 교육은 어떻게 되나요?",
@@ -165,7 +211,7 @@ FAQ_DATA = [
         ),
         "category": "사전 이수 조건"
     },
-
+ 
     # ── 대체 교육 ─────────────────────────────────────────────
     {
         "question": "대체 교육이 배정됐는데 뭔가요?",
@@ -189,7 +235,7 @@ FAQ_DATA = [
         ),
         "category": "대체 교육"
     },
-
+ 
     # ── 이러닝 ────────────────────────────────────────────────
     {
         "question": "이러닝(E-Learning)이 실행이 안 돼요.",
@@ -213,7 +259,7 @@ FAQ_DATA = [
         ),
         "category": "이러닝"
     },
-
+ 
     # ── ILT ───────────────────────────────────────────────────
     {
         "question": "집합 교육(ILT)은 어떻게 등록하나요?",
@@ -237,7 +283,7 @@ FAQ_DATA = [
         ),
         "category": "강의식 교육"
     },
-
+ 
     # ── OJT / 외부 교육 ────────────────────────────────────────
     {
         "question": "현장 교육(OJT)은 어떻게 이수 처리하나요?",
@@ -261,7 +307,7 @@ FAQ_DATA = [
         ),
         "category": "현장 교육"
     },
-
+ 
     # ── TRIA ──────────────────────────────────────────────────
     {
         "question": "TRIA가 무엇인가요?",
@@ -285,7 +331,7 @@ FAQ_DATA = [
         ),
         "category": "교육 영향 평가"
     },
-
+ 
     # ── 일반 ──────────────────────────────────────────────────
     {
         "question": "교육 관련 이메일 알림이 안 와요.",
@@ -345,708 +391,127 @@ FAQ_DATA = [
 ]
 
 # ─────────────────────────────────────────────────────────────
-# 2. 상수 정의
+# 3. 세션 상태 초기화
 # ─────────────────────────────────────────────────────────────
-EXAMPLE_QUESTIONS = [
-    "교육 이수는 어떻게 하나요?",
-    "퀴즈에서 떨어졌어요. 다시 볼 수 있나요?",
-    "커리큘럼 다음 교육이 잠겨서 안 열려요.",
-]
-
-SAMPLE_HISTORY_TODAY = ["이러닝이 실행이 안 돼요", "교육 마감일 확인 방법"]
-SAMPLE_HISTORY_WEEK  = ["ILT 등록 방법", "TRIA가 무엇인가요", "사전 이수 조건 안내"]
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "question_log" not in st.session_state:
+    st.session_state.question_log = []
 
 # ─────────────────────────────────────────────────────────────
-# 3. 핵심 로직 함수
+# 4. 로직 함수
 # ─────────────────────────────────────────────────────────────
+def get_bot_response(user_input):
+    user_input_cleaned = re.sub(r'[^가-힣a-zA-Z0-9\s]', '', user_input).strip()
+    
+    if not user_input_cleaned:
+        return "질문을 입력해 주세요. 😊"
 
-def normalize_text(text: str) -> str:
-    """텍스트 정규화 (소문자 + 특수문자 제거)"""
-    text = text.lower()
-    text = re.sub(r"[^\w\s가-힣]", " ", text)
-    return text.strip()
+    best_match = None
+    max_keywords = 0
 
+    for item in FAQ_DATA:
+        match_count = sum(1 for kw in item["keywords"] if kw.lower() in user_input_cleaned.lower())
+        if match_count > max_keywords:
+            max_keywords = match_count
+            best_match = item
 
-def calculate_match_score(user_input: str, faq_item: dict) -> int:
-    """키워드 매칭 점수 계산"""
-    score = 0
-    norm = normalize_text(user_input)
-    for kw in faq_item["keywords"]:
-        nkw = normalize_text(kw)
-        if nkw == norm:
-            score += 3
-        elif nkw in norm:
-            score += 2
-        elif norm in nkw:
-            score += 1
-    return score
-
-
-def find_best_faq(user_input: str) -> dict | None:
-    """최적 FAQ 반환 (점수 1 이상)"""
-    scored = [(calculate_match_score(user_input, item), item) for item in FAQ_DATA]
-    scored.sort(key=lambda x: x[0], reverse=True)
-    best_score, best_item = scored[0]
-    return best_item if best_score >= 1 else None
-
-
-def get_bot_response(user_input: str) -> str:
-    """챗봇 응답 생성"""
-    if not user_input.strip():
-        return "질문을 입력해 주세요."
-    result = find_best_faq(user_input)
-    return result["answer"] if result else "관련된 정보를 찾지 못했습니다. 다른 표현으로 질문해주세요."
-
-
-def init_session_state() -> None:
-    """세션 상태 초기화"""
-    defaults = {
-        "chat_history": [],
-        "question_log": [],
-        "pending_input": "",
-    }
-    for k, v in defaults.items():
-        if k not in st.session_state:
-            st.session_state[k] = v
-
+    if best_match and max_keywords > 0:
+        return best_match["answer"]
+    else:
+        return "죄송합니다. 해당 질문에 대한 정보를 찾지 못했습니다. 🧐\n키워드를 바꿔서 질문하시거나, 구체적인 내용을 교육 담당자에게 문의해 주세요."
 
 # ─────────────────────────────────────────────────────────────
-# 4. HTML/CSS 렌더링
+# 5. 사이드바 디자인
 # ─────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.image("https://upload.wikimedia.org/wikipedia/commons/4/4e/Veeva_Systems_Logo.svg", width=150)
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    with st.container():
+        st.markdown('<div class="info-card"><strong>ℹ️ 시스템 가이드</strong><br>Veeva Vault Training FAQ 전용 챗봇입니다.</div>', unsafe_allow_html=True)
+    
+    # 카테고리 정보
+    st.markdown("### 📂 FAQ 카테고리")
+    categories = sorted(set(item["category"] for item in FAQ_DATA))
+    for cat in categories:
+        st.caption(f"• {cat}")
+    
+    st.divider()
+    
+    # 로그 섹션
+    st.markdown("### 📋 최근 질문 로그")
+    if st.session_state.question_log:
+        for log in reversed(st.session_state.question_log[-5:]):
+            st.text(f"[{log['timestamp']}]")
+            st.caption(log['question'][:20] + "...")
+    else:
+        st.info("로그가 없습니다.")
 
-CUSTOM_CSS = """
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
-/* ── Reset & Base ─────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
-
-html, body, .stApp {
-    background: #ECEEF8 !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-}
-
-.block-container { padding: 0 !important; max-width: 100% !important; }
-header[data-testid="stHeader"] { display: none !important; }
-.stDeployButton { display: none !important; }
-#MainMenu { display: none !important; }
-footer { display: none !important; }
-
-/* ── 사이드바 ─────────────────────────────────── */
-section[data-testid="stSidebar"] {
-    background: #FFFFFF !important;
-    border-right: 1px solid #E8EAFB !important;
-    min-width: 255px !important;
-    max-width: 255px !important;
-}
-section[data-testid="stSidebar"] > div:first-child {
-    padding: 0 !important;
-}
-section[data-testid="stSidebar"] .block-container {
-    padding: 0 !important;
-}
-
-/* 사이드바 HTML 구조 */
-.sb-wrap {
-    padding: 22px 14px 20px;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-.sb-logo {
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: #111827;
-    margin-bottom: 18px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.sb-logo-accent {
-    background: linear-gradient(135deg, #5B6AF0 0%, #8B5CF6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-/* 새 대화 버튼 */
-.sb-newchat {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    width: 100%;
-    padding: 10px;
-    background: linear-gradient(135deg, #5B6AF0, #7C6EF5);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 13.5px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: 16px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    transition: opacity 0.2s, transform 0.15s;
-}
-.sb-newchat:hover { opacity: 0.9; transform: translateY(-1px); }
-
-/* 검색창 */
-.sb-search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #F4F5FF;
-    border: 1px solid #E8EAFB;
-    border-radius: 10px;
-    padding: 8px 12px;
-    margin-bottom: 18px;
-}
-.sb-search-icon { font-size: 14px; opacity: 0.5; }
-.sb-search-txt {
-    font-size: 12.5px;
-    color: #9CA3AF;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-/* 대화 목록 */
-.sb-group-label {
-    font-size: 10.5px;
-    font-weight: 700;
-    color: #C4C9D4;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    padding: 0 4px;
-    margin: 14px 0 6px;
-}
-.sb-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    font-size: 12.5px;
-    color: #4B5563;
-    cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 1px;
-    transition: background 0.15s;
-}
-.sb-item:hover { background: #F0F2FF; }
-.sb-item.active {
-    background: #EEF0FF;
-    color: #5B6AF0;
-    font-weight: 600;
-}
-.sb-item-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: #D1D5DB;
-    flex-shrink: 0;
-}
-.sb-item.active .sb-item-dot { background: #5B6AF0; }
-
-/* 사이드바 하단 */
-.sb-divider {
-    margin: auto 0 0;
-    border-top: 1px solid #F0F1F8;
-    padding-top: 14px;
-}
-.sb-bottom-item {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    font-size: 12.5px;
-    color: #6B7280;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-.sb-bottom-item:hover { background: #F4F5FF; }
-.sb-avatar {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #5B6AF0, #8B5CF6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 11px;
-    font-weight: 700;
-    flex-shrink: 0;
-}
-
-/* ── 메인 채팅 ─────────────────────────────────── */
-
-/* 메시지 행 */
-.msg-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 4px;
-    animation: msgIn 0.28s ease;
-}
-@keyframes msgIn {
-    from { opacity:0; transform: translateY(10px); }
-    to   { opacity:1; transform: translateY(0); }
-}
-.msg-row.user { justify-content: flex-end; }
-.msg-row.bot  { justify-content: flex-start; }
-
-/* 아바타 */
-.msg-avatar {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
-    flex-shrink: 0;
-    margin-top: 2px;
-}
-.msg-avatar.user-av {
-    background: linear-gradient(135deg, #5B6AF0, #7C6EF5);
-    color: white;
-    font-size: 12px;
-    font-weight: 700;
-}
-.msg-avatar.bot-av {
-    background: linear-gradient(135deg, #5B6AF0, #8B5CF6);
-}
-
-/* 사용자 버블 */
-.user-bubble {
-    background: linear-gradient(135deg, #5B6AF0, #7C6EF5);
-    color: white;
-    padding: 11px 17px;
-    border-radius: 18px 18px 4px 18px;
-    max-width: 62%;
-    font-size: 14px;
-    line-height: 1.6;
-    font-weight: 500;
-    box-shadow: 0 3px 14px rgba(91,106,240,0.28);
-    word-break: break-word;
-}
-
-/* 봇 응답 영역 */
-.bot-wrap { display:flex; flex-direction:column; gap:5px; max-width: 66%; }
-.bot-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.bot-label-name {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: #5B6AF0;
-}
-.bot-label-badge {
-    font-size: 10px;
-    background: #EEF0FF;
-    color: #7C6EF5;
-    padding: 1px 7px;
-    border-radius: 20px;
-    font-weight: 600;
-}
-.bot-bubble {
-    background: #F7F8FF;
-    border: 1px solid #E8EAFB;
-    color: #1F2937;
-    padding: 13px 17px;
-    border-radius: 4px 18px 18px 18px;
-    font-size: 13.5px;
-    line-height: 1.78;
-    box-shadow: 0 2px 8px rgba(91,106,240,0.06);
-    word-break: break-word;
-}
-.bot-bubble strong { color: #111827; font-weight: 600; }
-.bot-followup {
-    font-size: 11.5px;
-    color: #B0B5C9;
-    padding-left: 2px;
-}
-.bot-actions {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-}
-.b-btn {
-    background: none;
-    border: 1px solid #E8EAFB;
-    border-radius: 8px;
-    padding: 3px 9px;
-    font-size: 12px;
-    cursor: pointer;
-    color: #9CA3AF;
-    transition: all 0.12s;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-}
-.b-btn:hover { background:#EEF0FF; color:#5B6AF0; border-color:#C7CAFB; }
-.regen-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background: none;
-    border: none;
-    font-size: 11.5px;
-    color: #9CA3AF;
-    cursor: pointer;
-    margin-left: auto;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    transition: color 0.12s;
-}
-.regen-btn:hover { color: #5B6AF0; }
-
-/* 환영 화면 */
-.welcome-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 70px 40px 30px;
-    text-align: center;
-}
-.welcome-logo { font-size: 54px; margin-bottom: 18px; }
-.welcome-h {
-    font-size: 22px;
-    font-weight: 800;
-    color: #111827;
-    letter-spacing: -0.6px;
-    margin-bottom: 10px;
-}
-.welcome-sub {
-    font-size: 13.5px;
-    color: #9CA3AF;
-    line-height: 1.75;
-    max-width: 380px;
-}
-
-/* ── Streamlit 요소 재정의 ──────────────────────── */
-
-/* 채팅 메시지 컨테이너 (st.container) */
-div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
-    background: white;
-    border-radius: 20px 20px 0 0;
-}
-
-/* 텍스트 입력창 */
-.stTextInput > div > div > input {
-    border: 1.5px solid #E8EAFB !important;
-    border-radius: 50px !important;
-    padding: 13px 22px !important;
-    font-size: 14px !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    color: #111827 !important;
-    background: #F9FAFF !important;
-    transition: all 0.2s !important;
-}
-.stTextInput > div > div > input:focus {
-    border-color: #5B6AF0 !important;
-    background: #fff !important;
-    box-shadow: 0 0 0 3px rgba(91,106,240,0.1) !important;
-}
-.stTextInput > div > div > input::placeholder { color: #C4C9D4 !important; }
-.stTextInput label { display: none !important; }
-
-/* 전송 버튼 */
-.stFormSubmitButton > button {
-    border-radius: 50px !important;
-    background: linear-gradient(135deg, #5B6AF0, #7C6EF5) !important;
-    color: white !important;
-    border: none !important;
-    padding: 12px 24px !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    box-shadow: 0 4px 14px rgba(91,106,240,0.35) !important;
-    transition: all 0.2s !important;
-}
-.stFormSubmitButton > button:hover {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 6px 18px rgba(91,106,240,0.45) !important;
-}
-
-/* 예시 버튼 */
-div[data-testid="stHorizontalBlock"] .stButton > button {
-    border-radius: 50px !important;
-    background: white !important;
-    border: 1.5px solid #E8EAFB !important;
-    color: #5B6AF0 !important;
-    font-size: 12.5px !important;
-    font-weight: 500 !important;
-    padding: 7px 15px !important;
-    transition: all 0.15s !important;
-    white-space: nowrap !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-}
-div[data-testid="stHorizontalBlock"] .stButton > button:hover {
-    background: #EEF0FF !important;
-    border-color: #BABFFF !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(91,106,240,0.15) !important;
-}
-
-/* 초기화 버튼 */
-.stButton > button {
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 13px !important;
-    border-radius: 10px !important;
-}
-
-/* 스크롤바 */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-thumb { background: #E0E3F0; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #B0B5D0; }
-
-/* 구분선 */
-hr { border-color: #F0F1F8 !important; }
-
-/* Streamlit form border 제거 */
-[data-testid="stForm"] { border: none !important; padding: 0 !important; }
-</style>
-"""
-
-
-def build_sidebar_html() -> str:
-    """사이드바 HTML 생성"""
-    # 현재 세션 첫 질문
-    current_html = ""
-    if st.session_state.chat_history:
-        first_q = next((m["content"] for m in st.session_state.chat_history if m["role"] == "user"), None)
-        if first_q:
-            label = first_q[:24] + "…" if len(first_q) > 24 else first_q
-            current_html = f"""
-            <div class="sb-group-label">현재 대화</div>
-            <div class="sb-item active">
-                <span class="sb-item-dot"></span>{label}
-            </div>
-            """
-
-    today_html = "\n".join(
-        f'<div class="sb-item"><span class="sb-item-dot"></span>{t}</div>'
-        for t in SAMPLE_HISTORY_TODAY
-    )
-    week_html = "\n".join(
-        f'<div class="sb-item"><span class="sb-item-dot"></span>{t}</div>'
-        for t in SAMPLE_HISTORY_WEEK
-    )
-
-    return f"""
-<div class="sb-wrap">
-    <!-- 로고 -->
-    <div class="sb-logo">
-        🎓 <span class="sb-logo-accent">LMS Helper</span>
-    </div>
-
-    <!-- 새 대화 -->
-    <button class="sb-newchat" onclick="window.location.reload()">
-        ＋ &nbsp;새 대화 시작
-    </button>
-
-    <!-- 검색 -->
-    <div class="sb-search">
-        <span class="sb-search-icon">🔍</span>
-        <span class="sb-search-txt">대화 검색...</span>
-    </div>
-
-    <!-- 대화 목록 -->
-    {current_html}
-    <div class="sb-group-label">오늘</div>
-    {today_html}
-    <div class="sb-group-label">최근 7일</div>
-    {week_html}
-
-    <!-- 하단 메뉴 -->
-    <div class="sb-divider">
-        <div class="sb-bottom-item">⚙️ &nbsp;설정</div>
-        <div class="sb-bottom-item">
-            <div class="sb-avatar">V</div>
-            Vault 사용자
-        </div>
-    </div>
-</div>
-"""
-
-
-def render_user_msg(content: str) -> str:
-    """사용자 메시지 버블 HTML"""
-    safe = content.replace("<", "&lt;").replace(">", "&gt;")
-    return f"""
-<div class="msg-row user">
-    <div class="user-bubble">{safe}</div>
-    <div class="msg-avatar user-av">나</div>
-</div>
-"""
-
-
-def render_bot_msg(content: str, show_followup: bool = True) -> str:
-    """봇 응답 HTML — **굵게**, \n → <br> 처리"""
-    # 마크다운 bold 처리
-    html = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", content)
-    # 줄바꿈
-    html = html.replace("\n", "<br>")
-
-    followup = '<div class="bot-followup">💬 다른 도움이 필요하신가요?</div>' if show_followup else ""
-
-    return f"""
-<div class="msg-row bot">
-    <div class="msg-avatar bot-av">🤖</div>
-    <div class="bot-wrap">
-        <div class="bot-label">
-            <span class="bot-label-name">LMS 도우미</span>
-            <span class="bot-label-badge">✦ AI</span>
-        </div>
-        <div class="bot-bubble">{html}</div>
-        {followup}
-        <div class="bot-actions">
-            <button class="b-btn" title="도움이 됐어요">👍</button>
-            <button class="b-btn" title="도움이 안 됐어요">👎</button>
-            <button class="b-btn" title="복사">⧉</button>
-            <button class="regen-btn" title="다시 생성">↺ Regenerate</button>
-        </div>
-    </div>
-</div>
-"""
-
-
-def render_welcome() -> str:
-    """환영 화면 HTML"""
-    return """
-<div class="welcome-screen">
-    <div class="welcome-logo">🎓</div>
-    <div class="welcome-h">Veeva Vault Training FAQ 도우미</div>
-    <div class="welcome-sub">
-        LMS 관련 궁금한 점을 무엇이든 물어보세요.<br>
-        아래 예시 질문을 클릭하거나 직접 입력하세요.
-    </div>
-</div>
-"""
-
-# ─────────────────────────────────────────────────────────────
-# 5. 메인 앱
-# ─────────────────────────────────────────────────────────────
-
-def main():
-    st.set_page_config(
-        page_title="LMS FAQ 도우미",
-        page_icon="🎓",
-        layout="wide",
-        initial_sidebar_state="expanded",
-    )
-
-    init_session_state()
-
-    # CSS 주입
-    st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
-
-    # ── 사이드바 ─────────────────────────────────────────────
-    with st.sidebar:
-        st.markdown(build_sidebar_html(), unsafe_allow_html=True)
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        if st.button("🗑️ 대화 초기화", use_container_width=True):
-            st.session_state.chat_history = []
-            st.session_state.question_log = []
-            st.rerun()
-        # FAQ 통계
-        total = len(FAQ_DATA)
-        cats = len(set(i["category"] for i in FAQ_DATA))
-        st.markdown(
-            f"<div style='font-size:11px;color:#C4C9D4;text-align:center;margin-top:10px;'>"
-            f"FAQ {total}개 · 카테고리 {cats}개</div>",
-            unsafe_allow_html=True,
-        )
-
-    # ── 메인 레이아웃 ────────────────────────────────────────
-    # 채팅 메시지 영역
-    chat_area = st.container()
-    with chat_area:
-        # 흰 배경 카드 열기
-        st.markdown(
-            "<div style='background:white;border-radius:20px 20px 0 0;"
-            "padding:24px 48px 16px;min-height:65vh;max-height:65vh;"
-            "overflow-y:auto;box-shadow:0 -2px 24px rgba(91,106,240,0.07);'>",
-            unsafe_allow_html=True,
-        )
-
-        if not st.session_state.chat_history:
-            st.markdown(render_welcome(), unsafe_allow_html=True)
-        else:
-            for msg in st.session_state.chat_history:
-                if msg["role"] == "user":
-                    st.markdown(render_user_msg(msg["content"]), unsafe_allow_html=True)
-                else:
-                    st.markdown(
-                        render_bot_msg(msg["content"], msg.get("show_followup", True)),
-                        unsafe_allow_html=True,
-                    )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # ── 입력 영역 ─────────────────────────────────────────────
-    st.markdown(
-        "<div style='background:white;padding:12px 48px 20px;"
-        "border-top:1px solid #F0F1F8;border-radius:0 0 20px 20px;'>",
-        unsafe_allow_html=True,
-    )
-
-    # 예시 질문 버튼
-    ex_cols = st.columns(3)
-    labels = ["📚 " + EXAMPLE_QUESTIONS[0], "📝 " + EXAMPLE_QUESTIONS[1], "🔒 " + EXAMPLE_QUESTIONS[2]]
-    for col, label, q in zip(ex_cols, labels, EXAMPLE_QUESTIONS):
-        with col:
-            if st.button(label, key=f"ex_{q[:10]}"):
-                st.session_state.pending_input = q
-                st.rerun()
-
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
-    # 입력 폼
-    with st.form("chat_form", clear_on_submit=True):
-        f_cols = st.columns([11, 1])
-        with f_cols[0]:
-            default = st.session_state.get("pending_input", "")
-            user_input = st.text_input(
-                "msg",
-                value=default,
-                placeholder="✦  What's in your mind?  궁금한 점을 입력하세요...",
-                label_visibility="collapsed",
-            )
-        with f_cols[1]:
-            submitted = st.form_submit_button("전송 ➤")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # pending 초기화
-    if st.session_state.get("pending_input"):
-        st.session_state.pending_input = ""
-
-    # ── 질문 처리 ─────────────────────────────────────────────
-    if submitted and user_input and user_input.strip():
-        q = user_input.strip()
-
-        st.session_state.chat_history.append({"role": "user", "content": q})
-
-        answer = get_bot_response(q)
-        show_fu = "찾지 못했습니다" not in answer
-
-        st.session_state.chat_history.append({
-            "role": "bot",
-            "content": answer,
-            "show_followup": show_fu,
-        })
-
-        st.session_state.question_log.append({
-            "time": datetime.now().strftime("%H:%M"),
-            "q": q,
-            "a": answer[:60] + "…",
-        })
-
+    if st.button("🗑️ 대화 초기화", use_container_width=True):
+        st.session_state.chat_history = []
+        st.session_state.question_log = []
         st.rerun()
 
+# ─────────────────────────────────────────────────────────────
+# 6. 메인 화면 레이아웃
+# ─────────────────────────────────────────────────────────────
+st.markdown('<h1 class="main-header">🎓 LMS Support Center</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">Veeva Vault Training에 대해 궁금한 점을 물어보세요.</p>', unsafe_allow_html=True)
+
+# 대화 내용 표시
+for chat in st.session_state.chat_history:
+    with st.chat_message(chat["role"]):
+        st.markdown(chat["content"])
 
 # ─────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    main()
+# 7. 채팅 입력 및 응답 처리
+# ─────────────────────────────────────────────────────────────
+# 추천 질문 버튼 (가로 배치)
+col1, col2, col3 = st.columns(3)
+quick_queries = ["교육 이수 방법", "퀴즈 재응시", "커리큘럼이란?"]
+
+with col1:
+    if st.button(f"🔍 {quick_queries[0]}", use_container_width=True):
+        prompt = quick_queries[0]
+        st.session_state.temp_prompt = prompt
+with col2:
+    if st.button(f"🔍 {quick_queries[1]}", use_container_width=True):
+        prompt = quick_queries[1]
+        st.session_state.temp_prompt = prompt
+with col3:
+    if st.button(f"🔍 {quick_queries[2]}", use_container_width=True):
+        prompt = quick_queries[2]
+        st.session_state.temp_prompt = prompt
+
+# 채팅 입력창
+if prompt := st.chat_input("질문을 입력하세요..."):
+    # 사용자 메시지 추가
+    st.session_state.chat_history.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # 봇 메시지 생성 및 추가
+    response = get_bot_response(prompt)
+    
+    # 로그 기록
+    st.session_state.question_log.append({
+        "question": prompt,
+        "answer": response[:30] + "...",
+        "timestamp": datetime.now().strftime("%H:%M:%S")
+    })
+
+    with st.chat_message("assistant"):
+        st.markdown(response)
+        st.caption("💡 다른 도움이 더 필요하신가요?")
+    
+    st.session_state.chat_history.append({"role": "assistant", "content": response})
+
+# 버튼 클릭 시 처리 로직 (st.chat_input 외부에서 실행되도록 세션 활용 가능)
+if 'temp_prompt' in st.session_state:
+    p = st.session_state.pop('temp_prompt')
+    # 아래 로직을 통해 버튼 클릭 시 자동으로 질문이 입력된 것처럼 동작
+    st.session_state.chat_history.append({"role": "user", "content": p})
+    response = get_bot_response(p)
+    st.session_state.chat_history.append({"role": "assistant", "content": response})
+    st.rerun()
