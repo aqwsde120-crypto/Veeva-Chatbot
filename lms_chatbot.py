@@ -6,62 +6,36 @@ from datetime import datetime
 # 1. 페이지 설정 및 디자인 커스텀
 # ─────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Veeva Vault Training Help Center",
+    page_title="Veeva Vault Training Support Center",
     page_icon="🎓",
     layout="wide"
 )
 
-# 커스텀 CSS 주입 (고급스러운 디자인 적용)
 st.markdown("""
     <style>
-    /* 전체 배경색 및 폰트 설정 */
-    .stApp {
-        background-color: #f8f9fa;
-    }
-    
-    /* 사이드바 스타일링 */
-    [data-testid="stSidebar"] {
-        background-color: #ffffff;
-        border-right: 1px solid #e9ecef;
-    }
-    
-    /* 챗봇 메시지 스타일 개선 */
-    .stChatMessage {
-        border-radius: 15px;
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-    
-    /* 헤더 스타일링 */
-    .main-header {
-        font-family: 'Inter', sans-serif;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 0.5rem;
-    }
-    
-    .sub-header {
-        color: #64748b;
-        font-size: 1.1rem;
-        margin-bottom: 2rem;
-    }
-    
-    /* 카드형 UI (사이드바 메뉴용) */
-    .info-card {
-        background-color: #f1f5f9;
-        padding: 15px;
-        border-radius: 10px;
-        border-left: 5px solid #007bff;
-        margin-bottom: 15px;
-    }
+    .stApp { background-color: #f8f9fa; }
+    [data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e9ecef; }
+    .stChatMessage { border-radius: 15px; padding: 12px; margin-bottom: 10px; border: 1px solid #e2e8f0; }
+    .main-header { font-family: 'Inter', sans-serif; font-weight: 700; color: #1e293b; margin-top: -30px; }
+    .sub-header { color: #64748b; font-size: 1.1rem; margin-bottom: 2rem; }
+    .info-card { background-color: #f1f5f9; padding: 15px; border-radius: 10px; border-left: 5px solid #007bff; margin-bottom: 15px; font-size: 0.9rem; }
+    .stButton>button { border-radius: 8px; font-weight: 600; }
     </style>
     """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
-# 2. FAQ 데이터 정의
+# 2. 통합 FAQ 데이터 정의 (기존 데이터 + SOP 분석 + 신규 추가 데이터)
 # ─────────────────────────────────────────────────────────────
 FAQ_DATA = [
-    # ── 교육 이수 ───────────────────────────────────────────
+    # ── [SOP 기초 및 일반 규정] ──────────────────────────
+    {
+        "question": "LMS 교육관리 SOP의 최신 버전과 시행일은?",
+        "keywords": ["sop", "버전", "시행일", "문서번호", "개정", "최신"],
+        "answer": "📄 **SOP 정보 (CKD-SOP-1931)**\n\n- **최신 버전**: Revision 4\n- **주요 개정**: 장기 부재 기준 명확화(6개월), TRIA 절차 개선, 부서 이동 시 자동 처리 로직 등\n- **적용 범위**: Vault Training 시스템을 사용하는 전 임직원 및 외부 인력",
+        "category": "SOP/규정"
+    },
+    
+    # ── [교육 이수 (Completing Training Assignments)] ──────────
     {
         "question": "교육 이수는 어떻게 하나요?",
         "keywords": ["이수", "완료", "어떻게", "방법", "교육 완료", "training assignment", "이수 방법"],
@@ -128,8 +102,8 @@ FAQ_DATA = [
         ),
         "category": "교육 이수"
     },
- 
-    # ── 퀴즈 ─────────────────────────────────────────────────
+
+    # ── [퀴즈 (Quizzes)] ──────────────────────────────────
     {
         "question": "퀴즈에서 떨어졌어요. 다시 볼 수 있나요?",
         "keywords": ["퀴즈", "quiz", "떨어짐", "불합격", "failed", "재시험", "다시 볼", "퀴즈 실패"],
@@ -163,8 +137,8 @@ FAQ_DATA = [
         ),
         "category": "퀴즈"
     },
- 
-    # ── 커리큘럼 ──────────────────────────────────────────────
+
+    # ── [커리큘럼 (Curricula)] ────────────────────────────
     {
         "question": "커리큘럼이란 무엇인가요?",
         "keywords": ["커리큘럼", "curriculum", "curricula", "교육 과정", "과정"],
@@ -198,8 +172,8 @@ FAQ_DATA = [
         ),
         "category": "커리큘럼"
     },
- 
-    # ── 사전 이수 ─────────────────────────────────────────────
+
+    # ── [사전 이수 (Prerequisites)] ──────────────────────────
     {
         "question": "사전 이수 조건이 있는 교육은 어떻게 되나요?",
         "keywords": ["사전 이수", "prerequisite", "선수 교육", "먼저", "선행", "선수과목"],
@@ -211,8 +185,8 @@ FAQ_DATA = [
         ),
         "category": "사전 이수 조건"
     },
- 
-    # ── 대체 교육 ─────────────────────────────────────────────
+
+    # ── [대체 및 동등 교육 (Substitution & Equivalency)] ──────────
     {
         "question": "대체 교육이 배정됐는데 뭔가요?",
         "keywords": ["대체 교육", "substitute", "대체", "다른 교육", "대신", "대체과목"],
@@ -235,8 +209,8 @@ FAQ_DATA = [
         ),
         "category": "대체 교육"
     },
- 
-    # ── 이러닝 ────────────────────────────────────────────────
+
+    # ── [이러닝 (E-Learning)] ────────────────────────────
     {
         "question": "이러닝(E-Learning)이 실행이 안 돼요.",
         "keywords": ["이러닝", "e-learning", "elearning", "실행 안 됨", "열리지 않음", "콘텐츠 오류", "동영상", "영상"],
@@ -259,8 +233,8 @@ FAQ_DATA = [
         ),
         "category": "이러닝"
     },
- 
-    # ── ILT ───────────────────────────────────────────────────
+
+    # ── [집합 교육 (ILT)] ──────────────────────────────
     {
         "question": "집합 교육(ILT)은 어떻게 등록하나요?",
         "keywords": ["집합 교육", "ilt", "instructor-led", "강의", "오프라인 교육", "등록", "세션"],
@@ -283,8 +257,8 @@ FAQ_DATA = [
         ),
         "category": "강의식 교육"
     },
- 
-    # ── OJT / 외부 교육 ────────────────────────────────────────
+
+    # ── [현장 및 외부 교육 (OJT/External)] ─────────────────────
     {
         "question": "현장 교육(OJT)은 어떻게 이수 처리하나요?",
         "keywords": ["ojt", "현장 교육", "on-the-job", "현장", "실습"],
@@ -307,8 +281,8 @@ FAQ_DATA = [
         ),
         "category": "현장 교육"
     },
- 
-    # ── TRIA ──────────────────────────────────────────────────
+
+    # ── [교육 영향 평가 (TRIA)] ───────────────────────────
     {
         "question": "TRIA가 무엇인가요?",
         "keywords": ["tria", "영향 평가", "training requirement impact", "문서 변경", "트리아"],
@@ -331,8 +305,16 @@ FAQ_DATA = [
         ),
         "category": "교육 영향 평가"
     },
- 
-    # ── 일반 ──────────────────────────────────────────────────
+
+    # ── [사용자 상태 및 관리 (SOP 6.2항)] ───────────────────────
+    {
+        "question": "6개월 이상 휴직(장기 부재) 시 교육은 어떻게 되나요?",
+        "keywords": ["장기 부재", "휴직", "6개월", "복직", "부재", "inactive"],
+        "answer": "⏳ **장기 부재 처리 (SOP 6.2항)**\n\n- **Inactive 처리**: 6개월 이상 부재 시 관리자가 시스템 상태를 'Inactive'로 변경하여 교육 할당을 중지합니다.\n- **복직 시**: 상태를 다시 'Active'로 변경하며, 부재 중 발생한 필수 교육(신규 SOP 등)을 즉시 완료해야 합니다.",
+        "category": "사용자 관리"
+    },
+
+    # ── [일반 (General)] ───────────────────────────────
     {
         "question": "교육 관련 이메일 알림이 안 와요.",
         "keywords": ["알림", "이메일", "notification", "메일", "공지", "알림 없음"],
@@ -387,29 +369,21 @@ FAQ_DATA = [
             "3. **Refresher 교육** 설정 시, 전체 교육 대신 핵심 내용 복습 교육이 배정됩니다."
         ),
         "category": "교육 반복"
-    },
+    }
 ]
 
 # ─────────────────────────────────────────────────────────────
-# 3. 세션 상태 초기화
+# 3. 세션 상태 및 챗봇 로직
 # ─────────────────────────────────────────────────────────────
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
-if "question_log" not in st.session_state:
-    st.session_state.question_log = []
 
-# ─────────────────────────────────────────────────────────────
-# 4. 로직 함수
-# ─────────────────────────────────────────────────────────────
 def get_bot_response(user_input):
     user_input_cleaned = re.sub(r'[^가-힣a-zA-Z0-9\s]', '', user_input).strip()
+    if not user_input_cleaned: return "질문을 입력해 주세요. 😊"
     
-    if not user_input_cleaned:
-        return "질문을 입력해 주세요. 😊"
-
     best_match = None
     max_keywords = 0
-
     for item in FAQ_DATA:
         match_count = sum(1 for kw in item["keywords"] if kw.lower() in user_input_cleaned.lower())
         if match_count > max_keywords:
@@ -418,99 +392,61 @@ def get_bot_response(user_input):
 
     if best_match and max_keywords > 0:
         return best_match["answer"]
-    else:
-        return "죄송합니다. 해당 질문에 대한 정보를 찾지 못했습니다. 🧐\n키워드를 바꿔서 질문하시거나, 구체적인 내용을 교육 담당자에게 문의해 주세요."
+    return "해당 내용에 대한 규정이나 FAQ를 찾지 못했습니다. 🧐\n\n**추천 검색어:**\n- '이수 방법', '퀴즈 재시험', '장기 부재', 'TRIA', '이러닝 실행'"
 
 # ─────────────────────────────────────────────────────────────
-# 5. 사이드바 디자인
+# 4. 사이드바 레이아웃
 # ─────────────────────────────────────────────────────────────
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/commons/4/4e/Veeva_Systems_Logo.svg", width=150)
     st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<div class="info-card"><strong>ℹ️ 시스템 가이드</strong><br>Veeva Vault Training 및 내부 교육관리 SOP를 기반으로 운영됩니다.</div>', unsafe_allow_html=True)
     
-    with st.container():
-        st.markdown('<div class="info-card"><strong>ℹ️ 시스템 가이드</strong><br>Veeva Vault Training FAQ 전용 챗봇입니다.</div>', unsafe_allow_html=True)
-    
-    # 카테고리 정보
-    st.markdown("### 📂 FAQ 카테고리")
-    categories = sorted(set(item["category"] for item in FAQ_DATA))
-    for cat in categories:
-        st.caption(f"• {cat}")
+    st.markdown("### 📂 지식 카테고리")
+    cats = sorted(set(item["category"] for item in FAQ_DATA))
+    for c in cats:
+        count = sum(1 for item in FAQ_DATA if item["category"] == c)
+        st.caption(f"• {c} ({count}개 항목)")
     
     st.divider()
-    
-    # 로그 섹션
-    st.markdown("### 📋 최근 질문 로그")
-    if st.session_state.question_log:
-        for log in reversed(st.session_state.question_log[-5:]):
-            st.text(f"[{log['timestamp']}]")
-            st.caption(log['question'][:20] + "...")
-    else:
-        st.info("로그가 없습니다.")
-
     if st.button("🗑️ 대화 초기화", use_container_width=True):
         st.session_state.chat_history = []
-        st.session_state.question_log = []
         st.rerun()
 
 # ─────────────────────────────────────────────────────────────
-# 6. 메인 화면 레이아웃
+# 5. 메인 화면 레이아웃
 # ─────────────────────────────────────────────────────────────
-st.markdown('<h1 class="main-header">🎓 LMS Support Center</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Veeva Vault Training에 대해 궁금한 점을 물어보세요.</p>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🎓 LMS & Compliance Support</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">Veeva Vault Training 사용법 및 교육 규정 통합 가이드</p>', unsafe_allow_html=True)
 
-# 대화 내용 표시
+# 채팅 내역 표시
 for chat in st.session_state.chat_history:
     with st.chat_message(chat["role"]):
         st.markdown(chat["content"])
 
-# ─────────────────────────────────────────────────────────────
-# 7. 채팅 입력 및 응답 처리
-# ─────────────────────────────────────────────────────────────
-# 추천 질문 버튼 (가로 배치)
+# 추천 질문 (자주 묻는 질문 중심)
 col1, col2, col3 = st.columns(3)
-quick_queries = ["교육 이수 방법", "퀴즈 재응시", "커리큘럼이란?"]
-
 with col1:
-    if st.button(f"🔍 {quick_queries[0]}", use_container_width=True):
-        prompt = quick_queries[0]
-        st.session_state.temp_prompt = prompt
+    if st.button("🔍 이수 방법 안내", use_container_width=True): st.session_state.temp_prompt = "교육 이수는 어떻게 하나요?"
 with col2:
-    if st.button(f"🔍 {quick_queries[1]}", use_container_width=True):
-        prompt = quick_queries[1]
-        st.session_state.temp_prompt = prompt
+    if st.button("🔍 퀴즈 재응시 방법", use_container_width=True): st.session_state.temp_prompt = "퀴즈에서 떨어졌어요."
 with col3:
-    if st.button(f"🔍 {quick_queries[2]}", use_container_width=True):
-        prompt = quick_queries[2]
-        st.session_state.temp_prompt = prompt
+    if st.button("🔍 휴직 시 교육 처리", use_container_width=True): st.session_state.temp_prompt = "6개월 이상 휴직 시 어떻게 되나요?"
 
-# 채팅 입력창
-if prompt := st.chat_input("질문을 입력하세요..."):
-    # 사용자 메시지 추가
+# 채팅 입력
+if prompt := st.chat_input("LMS에 대해 궁금한 점을 입력하세요..."):
     st.session_state.chat_history.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    # 봇 메시지 생성 및 추가
-    response = get_bot_response(prompt)
+    with st.chat_message("user"): st.markdown(prompt)
     
-    # 로그 기록
-    st.session_state.question_log.append({
-        "question": prompt,
-        "answer": response[:30] + "...",
-        "timestamp": datetime.now().strftime("%H:%M:%S")
-    })
-
+    response = get_bot_response(prompt)
     with st.chat_message("assistant"):
         st.markdown(response)
-        st.caption("💡 다른 도움이 더 필요하신가요?")
-    
+        st.caption("💡 추가로 궁금한 점이 있으신가요?")
     st.session_state.chat_history.append({"role": "assistant", "content": response})
 
-# 버튼 클릭 시 처리 로직 (st.chat_input 외부에서 실행되도록 세션 활용 가능)
+# 버튼 클릭 시 즉시 실행 로직
 if 'temp_prompt' in st.session_state:
     p = st.session_state.pop('temp_prompt')
-    # 아래 로직을 통해 버튼 클릭 시 자동으로 질문이 입력된 것처럼 동작
     st.session_state.chat_history.append({"role": "user", "content": p})
     response = get_bot_response(p)
     st.session_state.chat_history.append({"role": "assistant", "content": response})
