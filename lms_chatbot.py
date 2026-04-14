@@ -39,28 +39,52 @@ if "faq_db" not in st.session_state:
     st.session_state.faq_db = load_data()
 
 # ─────────────────────────────────────────────────────────────
-# 3. 챗봇 로직
+# 3. 고도화된 챗봇 로직 (유사도 검색 강화)
 # ─────────────────────────────────────────────────────────────
 def get_bot_response(user_input):
-    # 특수문자 제거 및 소문자화
-    user_input_cleaned = re.sub(r'[^가-힣a-zA-Z0-9\s]', '', user_input).strip().lower()
-    if not user_input_cleaned: 
-        return "질문을 입력해 주세요. 😊"
+    # 1. 전처리: 특수문자 제거 및 공백 정규화
+    query = re.sub(r'[^가-힣a-zA-Z0-9\s]', ' ', user_input).strip().lower()
+    query_words = set(query.split())
     
-    best_match = None
-    max_keywords = 0
+    if not query: 
+        return "질문을 입력해 주세요. 😊", []
     
-    # 지식 베이스 검색
+    results = []
+    
     for item in st.session_state.faq_db:
-        match_count = sum(1 for kw in item["keywords"] if kw.lower() in user_input_cleaned)
-        if match_count > max_keywords:
-            max_keywords = match_count
-            best_match = item
+        score = 0
+        
+        # 가중치 1: 키워드 매칭 (가장 중요)
+        keywords = [k.lower() for k in item.get("keywords", [])]
+        matched_keywords = [kw for kw in keywords if kw in query]
+        score += len(matched_keywords) * 10
+        
+        # 가중치 2: 질문 제목에 포함 여부
+        if query in item["question"].lower() or item["question"].lower() in query:
+            score += 15
+            
+        # 가중치 3: 단어 단위 부분 일치
+        title_words = set(re.sub(r'[^가-힣a-zA-Z0-9\s]', ' ', item["question"]).lower().split())
+        common_words = query_words.intersection(title_words)
+        score += len(common_words) * 5
+        
+        if score > 0:
+            results.append({
+                "item": item,
+                "score": score
+            })
 
-    if best_match and max_keywords > 0:
-        return best_match["answer"]
+    # 점수 순으로 정렬
+    results = sorted(results, key=lambda x: x["score"], reverse=True)
+
+    if not results:
+        return "죄송합니다. 해당 내용에 대한 정보를 찾지 못했습니다. 🧐 질문을 좀 더 간단하게 입력해 보시겠어요? (예: '비밀번호', '이수 방법')", []
+
+    # 최상위 결과와 연관 질문 추출
+    best_match = results[0]["item"]
+    related_matches = [r["item"]["question"] for r in results[1:4]] # 상위 3개 연관 질문
     
-    return "죄송합니다. 해당 내용에 대한 정보를 찾지 못했습니다. 🧐 사내 교육 담당자에게 문의하시거나 관리자 모드에서 FAQ를 추가해 주세요."
+    return best_match["answer"], related_matches
 
 # ─────────────────────────────────────────────────────────────
 # 4. 사이드바 - 관리자 및 정보창
@@ -71,7 +95,6 @@ with st.sidebar:
     st.divider()
     st.markdown("### 🛠️ 데이터 관리자 모드")
     
-    # 지식 베이스 상태 표시
     st.info(f"현재 등록된 지식: **{len(st.session_state.faq_db)}**개")
     
     with st.expander("➕ 새 FAQ 추가하기"):
@@ -104,13 +127,13 @@ with st.sidebar:
         st.rerun()
         
     st.markdown("---")
-    st.caption("Veeva Vault Training Support Center v1.1")
+    st.caption("Veeva Vault Training Support Center v1.2")
 
 # ─────────────────────────────────────────────────────────────
 # 5. 메인 채팅 화면
 # ─────────────────────────────────────────────────────────────
 st.markdown('<h1 style="color:#1e293b;">🎓 LMS Support Center</h1>', unsafe_allow_html=True)
-st.markdown("> **Veeva Vault Training** 사용 중 궁금한 점을 물어보세요.")
+st.markdown("> **Veeva Vault Training** 사용 중 궁금한 점을 자유롭게 물어보세요.")
 
 # 채팅 기록 초기화
 if "chat_history" not in st.session_state:
@@ -122,14 +145,23 @@ for chat in st.session_state.chat_history:
         st.markdown(chat["content"])
 
 # 사용자 입력 처리
-if prompt := st.chat_input("질문을 입력하세요..."):
+if prompt := st.chat_input("궁금한 점을 입력하세요 (예: 비밀번호 초기화는 어떻게 하나요?)"):
     # 사용자 메시지 표시
     st.session_state.chat_history.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
     
-    # 봇 응답 생성 및 표시
-    response = get_bot_response(prompt)
+    # 봇 응답 생성
+    answer, related = get_bot_response(prompt)
+    
+    # 응답 구성
+    full_response = answer
+    if related:
+        full_response += "\n\n---\n**💡 혹시 이런 질문을 찾으시나요?**\n"
+        for r_q in related:
+            full_response += f"- {r_q}\n"
+
     with st.chat_message("assistant"):
-        st.markdown(response)
-    st.session_state.chat_history.append({"role": "assistant", "content": response})
+        st.markdown(full_response)
+    
+    st.session_state.chat_history.append({"role": "assistant", "content": full_response})
